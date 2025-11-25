@@ -1,0 +1,53 @@
+name: Node CI + Trigger Jenkins CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test-build-docker:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_IMAGE: yourdockerhubuser/node-ci-app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Docker login
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          docker build -t $DOCKER_IMAGE:$IMAGE_TAG -t $DOCKER_IMAGE:latest .
+
+      - name: Push Docker image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          docker push $DOCKER_IMAGE:$IMAGE_TAG
+          docker push $DOCKER_IMAGE:latest
+
+      - name: Trigger Jenkins CD
+        if: github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          curl -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
+            -X POST "${{ secrets.JENKINS_URL }}/job/node-cd/buildWithParameters" \
+            --data-urlencode "token=${{ secrets.JENKINS_JOB_TOKEN }}" \
+            --data-urlencode "IMAGE_TAG=$IMAGE_TAG"
+
