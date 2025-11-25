@@ -27,10 +27,10 @@ jobs:
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
     - name: Build Docker image
-      run: docker build -t yourdockerhubuser/node-ci-app:${{ github.sha }} .
+      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/node-ci-app:${{ github.sha }} .
 
     - name: Push Docker image
-      run: docker push yourdockerhubuser/node-ci-app:${{ github.sha }}
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/node-ci-app:${{ github.sha }}
 
     - name: Trigger Jenkins CD   # 👈 THIS IS THE IMPORTANT PART!
       if: github.ref == 'refs/heads/main'
