@@ -32,10 +32,10 @@ jobs:
     - name: Push Docker image
       run: docker push ${{ secrets.DOCKER_USERNAME }}/node-ci-app:${{ github.sha }}
 
-    - name: Trigger Jenkins CD   # 👈 THIS IS THE IMPORTANT PART!
+    - name: Trigger Jenkins CD
       if: github.ref == 'refs/heads/main'
       shell: bash
       run: |
         IMAGE_TAG=${GITHUB_SHA}
         curl -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-        "${{ secrets.JENKINS_URL }}/job/node-cd/buildWithParameters?token=${{ secrets.JENKINS_JOB_TOKEN }}&IMAGE_TAG=${IMAGE_TAG}"
+        "${{ secrets.JENKINS_URL }}/job/node-cd/buildWithParameters?token=${{ secrets.JENKINS_JOB_TOKEN }}&IMAGE_TAG=$IMAGE_TAG"
